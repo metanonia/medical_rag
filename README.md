@@ -2,7 +2,7 @@
 
 ### [ 사용모델]
 * 임베딩
-  * intfloat/multilingual-e5-base
+  * multilingual-e5-base (https://huggingface.co/intfloat/multilingual-e5-base)
 
 ### [데이터]
 AI HUB 공개 필수의료 의학지식 데이터
