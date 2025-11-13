@@ -1,4 +1,4 @@
-## RAG 구축 (study)
+## RAG 구축 
 
 ### [ 사용모델]
 * 임베딩
@@ -22,5 +22,16 @@ https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDat
 
 ### [ Work Flow]
 1. 데이터 전처리<br>
-   (1) 질문형태에 따른 임베딩용 문서 생성
-2. 임베딩 
+   (1) 질문형태에 따른 임베딩용 문서 생성<br>
+        * AI HUB의 라벨링된 자료 사용
+2. 임베딩<br>
+   (1) 임베딩 모델 학습용 자료 생성<br>
+       * cargo run --bin make_embedding_trading_data<br>
+   (2) 임베딩 모델 학습<br>
+        * python e5_tuning.py<br>
+   (3) 임베딩 정확도 측정<br>
+        * python evaluate_embedding.py<br>
+3. RAG
+
+### 📜 라이선스
+이 프로젝트는 AI Hub 데이터 이용 약관 및 각 모델 라이선스를 따릅니다.

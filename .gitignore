@@ -1,7 +1,5 @@
 /data
 .idea
-
-# Added by cargo
-
 /target
 /models/e5-base-offline
+**/**.json
