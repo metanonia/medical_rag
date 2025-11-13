@@ -1,4 +1,5 @@
 import json
+import torch
 from sentence_transformers import SentenceTransformer, InputExample, losses
 from sentence_transformers.evaluation import EmbeddingSimilarityEvaluator
 from torch.utils.data import DataLoader
@@ -67,11 +68,16 @@ print(f"\n총 학습 샘플 수: {len(train_examples)}")
 # 4. 모델 로드
 # ============================================
 #model = SentenceTransformer('intfloat/multilingual-e5-base')
-model = SentenceTransformer('intfloat/multilingual-e5-base', device='cpu')
-
-model = SentenceTransformer('intfloat/multilingual-e5-base').to("cpu")
+#model = SentenceTransformer('intfloat/multilingual-e5-base', device='cpu')
+device = torch.device("cpu")
+model = SentenceTransformer('intfloat/multilingual-e5-base').to(device)
 # 로컬 모델: model = SentenceTransformer('./local_models/e5-base')
 
+print("CUDA available:", torch.cuda.is_available())
+print("MPS available:", torch.backends.mps.is_available())
+print("Current device:", device)
+if torch.backends.mps.is_available():
+    torch.mps.empty_cache()
 # ============================================
 # 5. DataLoader 구성
 # ============================================
