@@ -1,9 +1,15 @@
+import os
 import json
 import torch
 from sentence_transformers import SentenceTransformer, InputExample, losses
 from sentence_transformers.evaluation import EmbeddingSimilarityEvaluator
 from torch.utils.data import DataLoader
 
+os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
+os.environ['ACCELERATE_TORCH_DEVICE'] = 'cpu'
+
+if hasattr(torch.backends, 'mps'):
+    torch.backends.mps.is_available = lambda: False
 # ============================================
 # 1. 학습 데이터 로드
 # ============================================

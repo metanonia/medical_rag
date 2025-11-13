@@ -29,6 +29,7 @@ https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDat
        * cargo run --bin make_embedding_trading_data<br>
    (2) 임베딩 모델 학습<br>
         * python e5_tuning.py<br>
+        * PYTORCH_ENABLE_MPS_FALLBACK=1 ACCELERATE_TORCH_DEVICE=cpu python e5_tuning.py<br>
    (3) 임베딩 정확도 측정<br>
         * python evaluate_embedding.py<br>
 3. RAG
