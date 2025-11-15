@@ -5,7 +5,7 @@
   * multilingual-e5-base (https://huggingface.co/intfloat/multilingual-e5-base)
 
 ### [데이터]
-AI HUB 공개 필수의료 의학지식 데이터
+#### 과학기술정보통신부와 한국지능정보사회진흥원이 운영하는 AI HUB의 공개 필수의료 의학지식 데이터
 https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=data&dataSetSn=71875
 1. 데이터 구성<br>
    (1) qa_id: 질의응답별 고유 id<br>
@@ -20,19 +20,37 @@ https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDat
    (4) question: 질문 텍스트<br>
    (5) answer: 답변 텍스트<br>
 
-### [ Work Flow]
-1. 데이터 전처리<br>
-   (1) 질문형태에 따른 임베딩용 문서 생성<br>
-        * AI HUB의 라벨링된 자료 사용
-2. 임베딩<br>
-   (1) 임베딩 모델 학습용 자료 생성<br>
-       * cargo run --bin make_embedding_trading_data<br>
-   (2) 임베딩 모델 학습<br>
-        * python e5_tuning.py<br>
-        * PYTORCH_ENABLE_MPS_FALLBACK=1 ACCELERATE_TORCH_DEVICE=cpu python e5_tuning.py<br>
-   (3) 임베딩 정확도 측정<br>
-        * python evaluate_embedding.py<br>
-3. RAG
+##### 허깅페이스에 공개된 의학 시험 정보
+git clone https://huggingface.co/datasets/sean0042/KorMedMCQA<br>
+* subject: doctor, nurse, or pharm
+* year: year of the examination
+* period: period of the examination
+* q_number: question number of the examination
+* question: question
+* A: First answer choice
+* B: Second answer choice
+* C: Third answer choice
+* D: Fourth answer choice
+* E: Fifth answer choice
+* cot : Answer with reasoning annotated by professionals (only available in fewshot split)
+* answer : Answer (1 to 5). 1 denotes answer A, and 5 denotes answer E
 
-### 📜 라이선스
-이 프로젝트는 AI Hub 데이터 이용 약관 및 각 모델 라이선스를 따릅니다.
+### [ Work Flow]
+#### 1. 데이터 전처리
+  - 라벨링 작업: 질문형태의 임베딩용 문서 생성<br>
+    - AI HUB 및 Hugingface의 라벨링된 자료 사용<br>
+    - RAG에서 가장 중요한 것은 1) 청크 나누기 2) 임베딩 모델의 파인 튜닝<br>
+    - 질문형 문서 개별 생성 작업이 힘든 경우, 청크 분할 후, 다음 청크를 포지티브 답변으로 가정하여 질문 문서 생성<br>
+#### 2. 임베딩<br>
+(1) 임베딩 모델 학습용 자료 생성<br>
+  `cargo run --bin make_embedding_trading_data`
+
+(2) 임베딩 모델 학습<br>
+  `python e5_tuning.py`<br>
+  `PYTORCH_ENABLE_MPS_FALLBACK=1 ACCELERATE_TORCH_DEVICE=cpu python e5_tuning.py`
+  - <b>학습 결과는 나쁨: 데이터 증강이 필요. Negative 검증시 유사도값 다양화 필요</b><br>
+
+(3) 임베딩 정확도 측정<br>
+  ```python evaluate_embedding.py```
+
+#### 3. RAG

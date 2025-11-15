@@ -1,14 +1,9 @@
-///
-/// Copywrite(c) 2025 metanonia
-///
-/// AI-HUB 건강자료로 부터 encoder를 파인튜팅하기 위한 자료 생성
-///
-
 use anyhow::Result;
 use glob::glob;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::fs;
+use csv::ReaderBuilder;
 
 #[derive(Debug, Deserialize)]
 struct QARecord {
@@ -64,7 +59,61 @@ fn normalize_question(question: &str) -> (String, bool) {
     }
 }
 
-fn process_files(
+// === CSV 추가 처리 함수 ===
+fn process_csv_file(
+    path: &str,
+    samples_mc: &mut Vec<OutputSampleMC>,
+) -> Result<()> {
+    let mut rdr = ReaderBuilder::new()
+        .has_headers(true)
+        .from_path(path)?;
+    for result in rdr.records() {
+        let record = result?;
+        let question = record.get(4).unwrap_or("").trim();
+        let a = record.get(5).unwrap_or("").trim();
+        let b = record.get(6).unwrap_or("").trim();
+        let c = record.get(7).unwrap_or("").trim();
+        let d = record.get(8).unwrap_or("").trim();
+        let e = record.get(9).unwrap_or("").trim();
+        let choices = vec![a, b, c, d, e];
+        let answer_raw = record.get(10).unwrap_or("").trim();
+
+        // answer 변환 (A/B/C/D/E, 1~5 모두 지원)
+        let ans_idx = match answer_raw.to_uppercase().as_str() {
+            "A" => 0,
+            "B" => 1,
+            "C" => 2,
+            "D" => 3,
+            "E" => 4,
+            v => v.parse::<usize>().unwrap_or(1) - 1,
+        };
+        let answer_content = choices.get(ans_idx).unwrap_or(&"").to_string();
+
+        let (normalized_stem, is_negation) = normalize_question(&question);
+
+        let mut negative = vec![];
+        for (i, ch) in choices.iter().enumerate() {
+            if i != ans_idx && !ch.is_empty() {
+                negative.push(ch.to_string());
+            }
+        }
+        let positive = answer_content;
+
+        // 정답 존재 시만 추가
+        if !positive.is_empty() {
+            samples_mc.push(OutputSampleMC {
+                question: normalized_stem,
+                positive,
+                negative,
+                is_negation,
+            });
+        }
+    }
+    Ok(())
+}
+
+// process_files() (JSON)
+fn process_json_files(
     pattern: &str,
     samples_mc: &mut Vec<OutputSampleMC>,
     samples_nonmc: &mut Vec<OutputSampleNonMC>,
@@ -82,10 +131,8 @@ fn process_files(
                 let stem = q_parts.get(0).unwrap_or(&"").trim().to_string() + "?";
                 let rest = q_parts.get(1).unwrap_or(&"");
 
-                // 부정 질문 감지 및 정규화
                 let (normalized_stem, is_negation) = normalize_question(&stem);
 
-                // "1) xxx  2) xxx ..." 형태로 추출
                 let mut choices = Vec::new();
                 for cap in choice_re.split(rest) {
                     let trimmed = cap.trim();
@@ -94,37 +141,27 @@ fn process_files(
                     }
                 }
 
-                // 답 번호와 내용을 분리 (예: "4) 메타콜린..." → "메타콜린...")
                 let answer_content = qa.answer.splitn(2, ')').nth(1).unwrap_or("").trim();
 
                 let mut negative = Vec::new();
                 let mut positive = String::new();
 
                 if is_negation {
-                    // 부정 질문: 정답이 "틀린 것/아닌 것"이므로
-                    // 정답은 negative로, 나머지는 positive 후보로
                     for choice in &choices {
                         if choice.contains(answer_content) {
-                            // 이것이 "틀린/아닌" 답이므로 실제로는 학습 시 회피해야 할 것
                             negative.push(choice.to_string());
                         } else {
-                            // 나머지는 "맞는" 답들
                             if positive.is_empty() {
                                 positive = choice.to_string();
                             } else {
-                                // 추가 긍정 샘플도 저장 (첫 번째 외 나머지)
                                 negative.push(choice.to_string());
                             }
                         }
                     }
-
-                    // 부정 질문의 경우, 실제 오답(정답으로 표시된 것)을 negative의 맨 앞에 배치
-                    // 이렇게 하면 학습 시 명시적으로 회피할 수 있음
                     if !negative.is_empty() {
                         negative.rotate_right(1);
                     }
                 } else {
-                    // 긍정 질문: 기존 로직
                     for choice in &choices {
                         if choice.contains(answer_content) {
                             positive = choice.to_string();
@@ -143,7 +180,6 @@ fn process_files(
                     });
                 }
             } else {
-                // 주관식
                 samples_nonmc.push(OutputSampleNonMC {
                     question: qa.question.clone(),
                     positive: qa.answer.clone(),
@@ -157,6 +193,12 @@ fn process_files(
 fn main() -> Result<()> {
     let pattern_train = "data/Training/**/*.json";
     let pattern_val = "data/Validation/**/*.json";
+    let csv_patterns_train = vec![
+        "KorMedMCQA/data/*-train.csv", // 경로 상황에 맞게 조절
+    ];
+    let csv_patterns_val = vec![
+        "KorMedMCQA/data/*-test.csv",  // 경로 상황에 맞게 조절
+    ];
 
     let mut output_samples_mc_train = Vec::new();
     let mut output_samples_nonmc_train = Vec::new();
@@ -165,21 +207,40 @@ fn main() -> Result<()> {
 
     let choice_re = Regex::new(r"\d\)\s?")?;
 
-    // Training 데이터 처리
-    process_files(
+    // Training 데이터 처리 (JSON)
+    process_json_files(
         pattern_train,
         &mut output_samples_mc_train,
         &mut output_samples_nonmc_train,
         &choice_re,
     )?;
-
-    // Validation 데이터 처리
-    process_files(
+    println!("step1 {}", output_samples_mc_train.len());
+    // Validation 데이터 처리 (JSON)
+    process_json_files(
         pattern_val,
         &mut output_samples_mc_val,
         &mut output_samples_nonmc_val,
         &choice_re,
     )?;
+    println!("step2 {}", output_samples_mc_val.len());
+    // Training 데이터 처리 (CSV)
+    for csv_pattern in csv_patterns_train {
+        for entry in glob(csv_pattern)? {
+            if let Ok(path) = entry {
+                process_csv_file(path.to_str().unwrap(), &mut output_samples_mc_train)?;
+            }
+        }
+    }
+    println!("step3 {}", output_samples_mc_train.len());
+    // Validation 데이터 처리 (CSV)
+    for csv_pattern in csv_patterns_val {
+        for entry in glob(csv_pattern)? {
+            if let Ok(path) = entry {
+                process_csv_file(path.to_str().unwrap(), &mut output_samples_mc_val)?;
+            }
+        }
+    }
+    println!("step4 {}", output_samples_mc_val.len());
 
     // Training 파일 저장
     let export_mc_train = serde_json::to_string_pretty(&output_samples_mc_train)?;

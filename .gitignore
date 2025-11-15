@@ -3,3 +3,6 @@
 /target
 /models/e5-base-offline
 **/**.json
+/models/output
+/models/checkpoints
+/KorMedMCQA

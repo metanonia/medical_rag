@@ -4,7 +4,7 @@ import numpy as np
 import json
 
 # 테스트 케이스 리스트
-# test_cases.json
+# embedding_evaluation.json
 # [
 #  {
 #    "question": "...",
@@ -16,11 +16,11 @@ import json
 #    "correct": ..
 #  },
 #]
-with open("test_cases.json", "r", encoding="utf-8") as f:
+with open("embedding_evaluation.json", "r", encoding="utf-8") as f:
     test_cases = json.load(f)
 
 # 임베딩 모델 로드
-model_path = "./e5-base-offline"
+model_path = "./output/e5-base-medical-finetuned"
 model = SentenceTransformer(model_path)
 
 def evaluate_model(model, test_cases):
