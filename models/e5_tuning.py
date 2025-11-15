@@ -10,36 +10,36 @@ os.environ['ACCELERATE_TORCH_DEVICE'] = 'cpu'
 
 if hasattr(torch.backends, 'mps'):
     torch.backends.mps.is_available = lambda: False
+
 # ============================================
 # 1. 학습 데이터 로드
 # ============================================
 # 객관식 데이터 (negative 포함)
-with open("embedding_train_mc.json", "r", encoding="utf-8") as f:
-    data_mc = json.load(f)
+with open("./embedding_train_mc.json", "r", encoding="utf-8") as f:
+    train_data_mc = json.load(f)
 
 # 주관식 데이터 (negative 없음)
-with open("embedding_train_nonmc.json", "r", encoding="utf-8") as f:
-    data_nonmc = json.load(f)
+with open("./embedding_train_nonmc.json", "r", encoding="utf-8") as f:
+    train_data_nonmc = json.load(f)
 
-print(f"객관식 데이터: {len(data_mc)}")
-print(f"주관식 데이터: {len(data_nonmc)}")
-print(f"전체 데이터: {len(data_mc) + len(data_nonmc)}")
+print(f"학습 - 객관식 데이터: {len(train_data_mc)}")
+print(f"학습 - 주관식 데이터: {len(train_data_nonmc)}")
+print(f"학습 - 전체 데이터: {len(train_data_mc) + len(train_data_nonmc)}")
 
 # ============================================
-# 2. Train/Validation 분리
+# 2. 검증 데이터 로드
 # ============================================
-# 객관식과 주관식 각각 10% 검증용으로 분리
-val_size_mc = max(1, len(data_mc) // 10)
-val_size_nonmc = max(1, len(data_nonmc) // 10)
+# 객관식 검증 데이터
+with open("./embedding_val_mc.json", "r", encoding="utf-8") as f:
+    val_data_mc = json.load(f)
 
-val_data_mc = data_mc[:val_size_mc]
-train_data_mc = data_mc[val_size_mc:]
+# 주관식 검증 데이터
+with open("./embedding_val_nonmc.json", "r", encoding="utf-8") as f:
+    val_data_nonmc = json.load(f)
 
-val_data_nonmc = data_nonmc[:val_size_nonmc]
-train_data_nonmc = data_nonmc[val_size_nonmc:]
-
-print(f"\n학습 데이터: MC={len(train_data_mc)}, NonMC={len(train_data_nonmc)}")
-print(f"검증 데이터: MC={len(val_data_mc)}, NonMC={len(val_data_nonmc)}")
+print(f"\n검증 - 객관식 데이터: {len(val_data_mc)}")
+print(f"검증 - 주관식 데이터: {len(val_data_nonmc)}")
+print(f"검증 - 전체 데이터: {len(val_data_mc) + len(val_data_nonmc)}")
 
 # ============================================
 # 3. 학습 데이터 준비 (InputExample 변환)
@@ -73,17 +73,16 @@ print(f"\n총 학습 샘플 수: {len(train_examples)}")
 # ============================================
 # 4. 모델 로드
 # ============================================
-#model = SentenceTransformer('intfloat/multilingual-e5-base')
-#model = SentenceTransformer('intfloat/multilingual-e5-base', device='cpu')
 device = torch.device("cpu")
 model = SentenceTransformer('intfloat/multilingual-e5-base').to(device)
 # 로컬 모델: model = SentenceTransformer('./local_models/e5-base')
 
-print("CUDA available:", torch.cuda.is_available())
+print("\nCUDA available:", torch.cuda.is_available())
 print("MPS available:", torch.backends.mps.is_available())
 print("Current device:", device)
 if torch.backends.mps.is_available():
     torch.mps.empty_cache()
+
 # ============================================
 # 5. DataLoader 구성
 # ============================================
@@ -103,10 +102,25 @@ train_loss = losses.MultipleNegativesRankingLoss(model)
 # ============================================
 # 객관식 + 주관식 검증 데이터 통합
 val_data_all = val_data_mc + val_data_nonmc
+val_sentences1 = []
+val_sentences2 = []
+val_scores = []
 
-val_sentences1 = [f"query: {item['question']}" for item in val_data_all]
-val_sentences2 = [f"passage: {item['positive']}" for item in val_data_all]
-val_scores = [1.0] * len(val_data_all)
+# 1. 정답 쌍(유사도 1.0)
+for item in val_data_all:
+    val_sentences1.append(f"query: {item['question']}")
+    val_sentences2.append(f"passage: {item['positive']}")
+    val_scores.append(1.0)
+
+# 2. 오답 쌍(유사도 0.0, 객관식만 해당)
+for item in val_data_mc:
+    negatives = item.get("negative", [])
+    for neg in negatives[:2]:  # 너무 많을 필요 없음, 2개 추천
+        val_sentences1.append(f"query: {item['question']}")
+        val_sentences2.append(f"passage: {neg}")
+        val_scores.append(0.0)
+
+print(f"검증용 쌍: {len(val_sentences1)}개 (정답 {len(val_data_all)}, 오답 {len(val_sentences1)-len(val_data_all)})")
 
 evaluator = EmbeddingSimilarityEvaluator(
     val_sentences1,
@@ -139,7 +153,7 @@ finetuned_model = SentenceTransformer("./output/e5-base-medical-finetuned")
 
 # 테스트 케이스
 test_cases = [
-    ("query: 환자가 기침을 하는데 밤에 심해진다", "passage: 메타콜린 기관지유발검사"),
+    ("query: 70세 여성이 반복적인 실신을 호소하며 병원에 내원했습니다. 심전도 검사에서 좌각차단(bifascicular block) 소견이 확인되었으며, 추가 검사에서 간헐적인 3도 방실차단이 관찰되었습니다. 이 환자에게 가장 적절한 치료는 무엇입니까", "passage: 영구형 인공심박조율기 삽입"),
     ("query: 자궁내막증 진단 방법은?", "passage: 복강경 검사"),
 ]
 
