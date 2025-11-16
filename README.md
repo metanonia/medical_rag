@@ -48,7 +48,6 @@ git clone https://huggingface.co/datasets/sean0042/KorMedMCQA<br>
 (2) 임베딩 모델 학습<br>
   `python e5_tuning.py`<br>
   `PYTORCH_ENABLE_MPS_FALLBACK=1 ACCELERATE_TORCH_DEVICE=cpu python e5_tuning.py`
-  - <b>학습 결과는 나쁨: 데이터 증강이 필요. Negative 검증시 유사도값 다양화 필요</b><br>
 
 (3) 임베딩 정확도 측정<br>
   ```python evaluate_embedding.py```

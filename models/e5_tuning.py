@@ -257,7 +257,7 @@ ir_evaluator = IREvaluator(
 model.fit(
     train_objectives=[(train_dataloader, train_loss)],
     evaluator=ir_evaluator,
-    epochs=3,
+    epochs=5,
     evaluation_steps=500,
     warmup_steps=100,
     output_path="./output/e5-base-medical-finetuned",
