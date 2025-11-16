@@ -5,6 +5,7 @@ from sentence_transformers import SentenceTransformer, InputExample, losses
 from sentence_transformers.evaluation import EmbeddingSimilarityEvaluator
 from sentence_transformers.evaluation import SentenceEvaluator
 from torch.utils.data import DataLoader
+from sentence_transformers.util import cos_sim
 from tqdm import tqdm
 
 os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
@@ -281,8 +282,6 @@ test_cases = [
     ("query: 70세 여성이 반복적인 실신을 호소하며 병원에 내원했습니다. 심전도 검사에서 좌각차단(bifascicular block) 소견이 확인되었으며, 추가 검사에서 간헐적인 3도 방실차단이 관찰되었습니다. 이 환자에게 가장 적절한 치료는 무엇입니까", "passage: 영구형 인공심박조율기 삽입"),
     ("query: 자궁내막증 진단 방법은?", "passage: 복강경 검사"),
 ]
-
-from sentence_transformers.util import cos_sim
 
 print("\n=== 테스트 결과 ===")
 for query, doc in test_cases:
