@@ -8,12 +8,12 @@ from torch.utils.data import DataLoader
 from sentence_transformers.util import cos_sim
 from tqdm import tqdm
 
-os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
-os.environ['ACCELERATE_TORCH_DEVICE'] = 'cpu'
+# os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
+# os.environ['ACCELERATE_TORCH_DEVICE'] = 'cpu'
 
 
-if hasattr(torch.backends, 'mps'):
-    torch.backends.mps.is_available = lambda: False
+# if hasattr(torch.backends, 'mps'):
+#     torch.backends.mps.is_available = lambda: False
 
 # ============================================
 # 1. 학습 데이터 로드
@@ -77,15 +77,16 @@ print(f"\n총 학습 샘플 수: {len(train_examples)}")
 # ============================================
 # 4. 모델 로드
 # ============================================
-device = torch.device("cpu")
-model = SentenceTransformer('intfloat/multilingual-e5-base').to(device)
+# device = torch.device("cpu")
+# model = SentenceTransformer('intfloat/multilingual-e5-base').to(device)
+model = SentenceTransformer('intfloat/multilingual-e5-base')
 # 로컬 모델: model = SentenceTransformer('./local_models/e5-base')
 
-print("\nCUDA available:", torch.cuda.is_available())
-print("MPS available:", torch.backends.mps.is_available())
-print("Current device:", device)
-if torch.backends.mps.is_available():
-    torch.mps.empty_cache()
+# print("\nCUDA available:", torch.cuda.is_available())
+# print("MPS available:", torch.backends.mps.is_available())
+# print("Current device:", device)
+# if torch.backends.mps.is_available():
+#     torch.mps.empty_cache()
 
 class IREvaluator(SentenceEvaluator):
     """
