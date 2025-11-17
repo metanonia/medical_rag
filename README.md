@@ -1,4 +1,4 @@
-## RAG 구축 
+## RAG 구축 프로세스 학습
 
 ### [ 사용모델]
 * 임베딩
@@ -41,16 +41,26 @@ git clone https://huggingface.co/datasets/sean0042/KorMedMCQA<br>
     - AI HUB 및 Hugingface의 라벨링된 자료 사용<br>
     - RAG에서 가장 중요한 것은 1) 청크 나누기 2) 임베딩 모델의 파인 튜닝<br>
     - 질문형 문서 개별 생성 작업이 힘든 경우, 청크 분할 후, 다음 청크를 포지티브 답변으로 가정하여 질문 문서 생성<br>
-#### 2. 임베딩<br>
+#### 2. 임베딩 모델 학습<br>
 (1) 임베딩 모델 학습용 자료 생성<br>
-  `python make_embedding_trading_data.py`
+  ```python make_embedding_trading_data.py```<br>
 
 (2) 임베딩 모델 학습<br>
   ```python e5_tuning.py```<br>
-  ```PYTORCH_ENABLE_MPS_FALLBACK=1 ACCELERATE_TORCH_DEVICE=cpu python e5_tuning.py```
+  참고: ```PYTORCH_ENABLE_MPS_FALLBACK=1 ACCELERATE_TORCH_DEVICE=cpu python e5_tuning.py```<br>
 
 (3) 임베딩 정확도 측정<br>
   ```python make_evaluattion_data.py```<br>
-  ```python evaluate_embedding.py```
+  ```python evaluate_embedding.py```<br>
+  - 객관식 문제 풀이에서는 질문과 선택지를 각각 임베딩한다음, 질문과 각 항목간의 유사도 검색하여 정답 검출<br>
+  - KorMedMCQA/data/*-dev.csv 사용 테스트<br>
 
-#### 3. RAG
+#### 3. RAG<br>
+(1) 벡터디비 생성<br>
+  - ChromaDB 사용<br>
+  ```python make_vectordb.py```<br>
+
+(2) ollama(phi4) 연동<br>
+  - 주관식: 질문을 임베딩한 다음, 코사인 유사도를 기준으로 answer(positive) 검색, 질문과 검색내용을 LLM으로 전달<br>
+  - 학습에 사용한 embedding_val_nonmc.json 이용 테스트<br>
+  ```python rag_test.py```
