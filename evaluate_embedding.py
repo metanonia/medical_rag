@@ -16,11 +16,11 @@ import json
 #    "correct": ..
 #  },
 #]
-with open("embedding_evaluation.json", "r", encoding="utf-8") as f:
+with open("models/embedding_evaluation.json", "r", encoding="utf-8") as f:
     test_cases = json.load(f)
 
 # 임베딩 모델 로드
-model_path = "./output/e5-base-medical-finetuned"
+model_path = "models/output/e5-base-medical-finetuned"
 model = SentenceTransformer(model_path)
 
 def evaluate_model(model, test_cases):

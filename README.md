@@ -43,13 +43,14 @@ git clone https://huggingface.co/datasets/sean0042/KorMedMCQA<br>
     - 질문형 문서 개별 생성 작업이 힘든 경우, 청크 분할 후, 다음 청크를 포지티브 답변으로 가정하여 질문 문서 생성<br>
 #### 2. 임베딩<br>
 (1) 임베딩 모델 학습용 자료 생성<br>
-  `cargo run --bin make_embedding_trading_data`
+  `python make_embedding_trading_data.py`
 
 (2) 임베딩 모델 학습<br>
-  `python e5_tuning.py`<br>
-  `PYTORCH_ENABLE_MPS_FALLBACK=1 ACCELERATE_TORCH_DEVICE=cpu python e5_tuning.py`
+  ```python e5_tuning.py```<br>
+  ```PYTORCH_ENABLE_MPS_FALLBACK=1 ACCELERATE_TORCH_DEVICE=cpu python e5_tuning.py```
 
 (3) 임베딩 정확도 측정<br>
+  ```python make_evaluattion_data.py```<br>
   ```python evaluate_embedding.py```
 
 #### 3. RAG

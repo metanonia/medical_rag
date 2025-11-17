@@ -19,11 +19,11 @@ if hasattr(torch.backends, 'mps'):
 # 1. 학습 데이터 로드
 # ============================================
 # 객관식 데이터 (negative 포함)
-with open("./embedding_train_mc.json", "r", encoding="utf-8") as f:
+with open("models/embedding_train_mc.json", "r", encoding="utf-8") as f:
     train_data_mc = json.load(f)
 
 # 주관식 데이터 (negative 없음)
-with open("./embedding_train_nonmc.json", "r", encoding="utf-8") as f:
+with open("models/embedding_train_nonmc.json", "r", encoding="utf-8") as f:
     train_data_nonmc = json.load(f)
 
 print(f"학습 - 객관식 데이터: {len(train_data_mc)}")
@@ -34,11 +34,11 @@ print(f"학습 - 전체 데이터: {len(train_data_mc) + len(train_data_nonmc)}"
 # 2. 검증 데이터 로드
 # ============================================
 # 객관식 검증 데이터
-with open("./embedding_val_mc.json", "r", encoding="utf-8") as f:
+with open("models/embedding_val_mc.json", "r", encoding="utf-8") as f:
     val_data_mc = json.load(f)
 
 # 주관식 검증 데이터
-with open("./embedding_val_nonmc.json", "r", encoding="utf-8") as f:
+with open("models/embedding_val_nonmc.json", "r", encoding="utf-8") as f:
     val_data_nonmc = json.load(f)
 
 print(f"\n검증 - 객관식 데이터: {len(val_data_mc)}")
@@ -260,7 +260,7 @@ model.fit(
     epochs=5,
     evaluation_steps=500,
     warmup_steps=100,
-    output_path="./output/e5-base-medical-finetuned",
+    output_path="models/output/e5-base-medical-finetuned",
     save_best_model=True,              # validation 최고 모델 저장 유지
     show_progress_bar=True,
     optimizer_params={
@@ -270,12 +270,12 @@ model.fit(
 )
 
 print("\n파인튜닝 완료!")
-print("모델 저장 위치: ./output/e5-base-medical-finetuned")
+print("모델 저장 위치: models/output/e5-base-medical-finetuned")
 
 # ============================================
 # 9. 파인튜닝된 모델 테스트
 # ============================================
-finetuned_model = SentenceTransformer("./output/e5-base-medical-finetuned")
+finetuned_model = SentenceTransformer("models/output/e5-base-medical-finetuned")
 
 # 테스트 케이스
 test_cases = [
